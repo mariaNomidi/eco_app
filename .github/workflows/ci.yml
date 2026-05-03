@@ -1,0 +1,53 @@
+name: Go CI
+
+on:
+  push:
+    branches: [ "**" ]
+  pull_request:
+    branches: [ "**" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Checkout code
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # 2. Set up Go
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.22"
+
+      # 3. Download dependencies
+      - name: Install dependencies
+        run: go mod download
+
+      # 4. Vet (static analysis)
+      - name: Run go vet
+        run: go vet ./...
+
+      # 5. Run tests
+      - name: Run tests
+        run: go test ./... -v
+
+      # 6. Build binary
+      - name: Build
+        run: go build -v ./...
+
+      # 7 . Cache
+      - name: Cache Go modules
+        uses: actions/cache@v4
+        with:
+          path: ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}  
+
+      # 8. Format Check
+      - name: Check formatting
+        run: test -z "$(gofmt -l .)"
+
+      # 9. Race detection
+      - name: Run tests with race detector
+        run: go test ./... -race
